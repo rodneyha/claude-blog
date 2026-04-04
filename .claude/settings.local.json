@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x install.sh)",
+      "Bash(bash install.sh)",
+      "WebSearch",
+      "WebFetch(domain:www.cyclingnews.com)",
+      "WebFetch(domain:www.bikeradar.com)",
+      "WebFetch(domain:www.cyclingweekly.com)",
+      "WebFetch(domain:velomotion.net)",
+      "WebFetch(domain:www.kask.com)",
+      "WebFetch(domain:velo.outsideonline.com)",
+      "WebFetch(domain:escapecollective.com)",
+      "WebFetch(domain:pixabay.com)",
+      "WebFetch(domain:unsplash.com)",
+      "WebFetch(domain:www.220triathlon.com)",
+      "WebFetch(domain:www.helmet.beam.vt.edu)",
+      "WebFetch(domain:www.feedthehabit.com)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebFetch(domain:www.pexels.com)",
+      "WebFetch(domain:road.cc)",
+      "WebFetch(domain:www.rouleur.cc)",
+      "WebFetch(domain:en.3bikes.fr)",
+      "WebFetch(domain:granfondo-cycling.com)",
+      "WebFetch(domain:brakeaway.nl)",
+      "WebFetch(domain:www.activegearreview.com)",
+      "WebFetch(domain:wielerverhaal.com)",
+      "WebFetch(domain:grinta.be)",
+      "WebFetch(domain:www.merlincycles.com)",
+      "WebFetch(domain:www.westbrookcycles.co.uk)",
+      "WebFetch(domain:www.parentini.com)",
+      "WebFetch(domain:www.mdpi.com)",
+      "WebFetch(domain:webhaaz.nl)"
+    ]
+  }
+}
