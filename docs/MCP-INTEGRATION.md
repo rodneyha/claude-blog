@@ -56,17 +56,27 @@ photo sourcing from Pixabay/Unsplash/Pexels.
 
 ### Configuration
 
-The project `.mcp.json` is pre-configured. Set your API key:
+The setup script writes to Claude Code's user-private global settings by
+default (safer; never reaches git). To use project-local `.mcp.json`, opt in
+with `--project` (the script will refuse to write a literal key into a
+tracked file).
 
 ```bash
-# Option 1: Run the setup script
+# Recommended: writes ~/.claude/settings.json (user-private, mode 0600)
 python3 skills/blog-image/scripts/setup_image_mcp.py --key YOUR_KEY
 
-# Option 2: Set environment variable
+# Project-local (env-expansion only, NEVER stores literal key)
+python3 skills/blog-image/scripts/setup_image_mcp.py --key YOUR_KEY --project
+# Then export the key in your shell so the env-expansion resolves:
 export GOOGLE_AI_API_KEY="your-key-from-aistudio.google.com"
 ```
 
 Get a free API key at: https://aistudio.google.com/apikey
+
+> **Security**: `.mcp.json` is gitignored as of 2026-04-27. A tracked
+> `.mcp.example.json` template lives alongside. The setup script pins the
+> nanobanana-mcp package version (`@ycse/nanobanana-mcp@1.1.1`) to mitigate
+> supply-chain risk on `npx -y` auto-update.
 
 ### Verify Setup
 
@@ -154,18 +164,27 @@ AI Visibility Report (DataForSEO AI Optimization)
 
 **One-command install (recommended):**
 
+Load credentials from a local secret file first so they are not written inline:
+
+```bash
+set -a
+. ~/.config/dataforseo.env
+set +a
+```
+
 ```bash
 claude mcp add dataforseo \
-  --env DATAFORSEO_USERNAME=your_username \
-  --env DATAFORSEO_PASSWORD=your_password \
+  --env DATAFORSEO_USERNAME="${DATAFORSEO_USERNAME}" \
+  --env DATAFORSEO_PASSWORD="${DATAFORSEO_PASSWORD}" \
   -- npx -y dataforseo-mcp-server
 ```
 
 **Or remote server (no local install needed):**
 
 ```bash
+DATAFORSEO_BASIC_AUTH="$(printf '%s:%s' "$DATAFORSEO_USERNAME" "$DATAFORSEO_PASSWORD" | base64)"
 claude mcp add --transport http dataforseo https://mcp.dataforseo.com/http \
-  --header "Authorization: Basic $(echo -n 'username:password' | base64)"
+  --header "Authorization: Basic ${DATAFORSEO_BASIC_AUTH}"
 ```
 
 **Or add to `~/.claude/settings.json` manually:**
@@ -177,8 +196,8 @@ claude mcp add --transport http dataforseo https://mcp.dataforseo.com/http \
       "command": "npx",
       "args": ["-y", "dataforseo-mcp-server"],
       "env": {
-        "DATAFORSEO_USERNAME": "your-username",
-        "DATAFORSEO_PASSWORD": "your-password",
+        "DATAFORSEO_USERNAME": "${DATAFORSEO_USERNAME}",
+        "DATAFORSEO_PASSWORD": "${DATAFORSEO_PASSWORD}",
         "ENABLED_MODULES": "SERP,KEYWORDS_DATA,ONPAGE,DATAFORSEO_LABS,BACKLINKS,DOMAIN_ANALYTICS,BUSINESS_DATA,CONTENT_ANALYSIS,AI_OPTIMIZATION"
       }
     }
@@ -190,9 +209,11 @@ claude mcp add --transport http dataforseo https://mcp.dataforseo.com/http \
 
 1. **Store credentials in environment variables** (not in settings.json):
    ```bash
-   # Add to ~/.bashrc or ~/.zshrc
-   export DATAFORSEO_USERNAME="your-username"
-   export DATAFORSEO_PASSWORD="your-password"
+   # Store DATAFORSEO_USERNAME and DATAFORSEO_PASSWORD in this 0600 file.
+   chmod 600 ~/.config/dataforseo.env
+   set -a
+   . ~/.config/dataforseo.env
+   set +a
    ```
 
 2. **Use field filtering** to reduce token usage (~75%):
@@ -332,8 +353,8 @@ Target Keywords
 Competitor Content Gap
 | Keyword                    | Competitor A | Competitor B | You  |
 |---------------------------|-------------|-------------|------|
-| kubernetes alerting setup  | #3          | #7          | --   |
-| prometheus vs datadog      | #5          | #2          | --   |
+| kubernetes alerting setup  | #3          | #7          |:   |
+| prometheus vs datadog      | #5          | #2          |:   |
 | k8s monitoring best practices | #1       | #4          | #12  |
 ```
 
@@ -595,10 +616,10 @@ Validate both content quality and technical readiness for AI crawlers:
 |------------|--------|----------|
 | Nano Banana (Gemini) | **Available** | AI image generation for blog content |
 | DataForSEO | **Available** | Recommended: covers SERP, keywords, backlinks, on-page, domain, content, AI optimization |
-| Google Search Console | Planned | High - for first-party traffic/CTR data |
-| Google Analytics (GA4) | Future | Low |
+| Google Search Console | **Available** (via `/blog google gsc`) | First-party traffic/CTR data |
+| Google Analytics (GA4) | **Available** (via `/blog google ga4`) | Organic traffic reports |
 | WordPress REST API | Future | Low |
 | Contentful / Sanity CMS | Future | Low |
 
 Community contributions for MCP server implementations are welcome.
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](../.github/CONTRIBUTING.md) for guidelines.

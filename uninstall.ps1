@@ -9,8 +9,8 @@ function Write-Color($Color, $Text) {
 }
 
 function Main {
-    $SkillDir = Join-Path $env:USERPROFILE ".claude" "skills"
-    $AgentDir = Join-Path $env:USERPROFILE ".claude" "agents"
+    $SkillDir = Join-Path (Join-Path $env:USERPROFILE ".claude") "skills"
+    $AgentDir = Join-Path (Join-Path $env:USERPROFILE ".claude") "agents"
 
     Write-Color Cyan "=== Uninstalling claude-blog ==="
     Write-Host ""
@@ -22,29 +22,50 @@ function Main {
         Write-Color Green "  Removed: $blogDir"
     }
 
-    # Remove sub-skills
-    $subSkills = @(
-        "blog-write", "blog-rewrite", "blog-analyze", "blog-brief",
-        "blog-calendar", "blog-strategy", "blog-outline", "blog-seo-check",
-        "blog-schema", "blog-repurpose", "blog-geo", "blog-audit", "blog-chart", "blog-image"
-    )
-    foreach ($skill in $subSkills) {
-        $skillPath = Join-Path $SkillDir $skill
-        if (Test-Path $skillPath) {
-            Remove-Item -Recurse -Force $skillPath
-            Write-Color Green "  Removed: $skillPath"
+    # Remove sub-skills via glob (closes audit VULN-035: prior static array
+    # was stale and missed v1.7.0 sub-skills like blog-cluster, blog-flow,
+    # blog-multilingual, blog-translate, blog-localize, blog-locale-audit,
+    # blog-notebooklm, blog-audio, blog-google. The glob pattern is the
+    # same approach uninstall.sh already uses.)
+    if (Test-Path $SkillDir) {
+        Get-ChildItem -Path $SkillDir -Directory -Filter "blog-*" | ForEach-Object {
+            Remove-Item -Recurse -Force $_.FullName
+            Write-Color Green "  Removed: $($_.FullName)"
         }
     }
 
-    # Remove agents
-    $agents = @("blog-researcher", "blog-writer", "blog-seo", "blog-reviewer")
-    foreach ($agent in $agents) {
-        $agentPath = Join-Path $AgentDir "$agent.md"
-        if (Test-Path $agentPath) {
-            Remove-Item -Force $agentPath
-            Write-Color Green "  Removed: $agentPath"
+    # Remove agents via glob (closes VULN-035: blog-translator was missing
+    # from the static list).
+    if (Test-Path $AgentDir) {
+        Get-ChildItem -Path $AgentDir -Filter "blog-*.md" | ForEach-Object {
+            Remove-Item -Force $_.FullName
+            Write-Color Green "  Removed: $($_.FullName)"
         }
     }
+
+    # Remove root-level scripts copied to ~/.claude/scripts/ by install.ps1
+    # (v1.8.6: install.ps1 now copies all scripts/*.py to that location).
+    $ClaudeScriptsDir = Join-Path $env:USERPROFILE ".claude\scripts"
+    $helperScripts = @("analyze_blog.py", "blog_preflight.py", "blog_render.py", "blog_hygiene.py",
+                        "cognitive_load.py", "discourse_research.py", "generate_hero.py",
+                        "load_untrusted_root.py", "lint_prose.py", "sync_flow.py",
+                        "ai_citation_score.py", "content_decay.py", "quality_gate.py", "style_learn.py",
+                        "check_google_currentness.py", "check_secrets.py", "consistency_check.py", "dependency_smoke.py",
+                        "sync_google_updates.py", "validate_public_release.py")
+    foreach ($s in $helperScripts) {
+        $scriptPath = Join-Path $ClaudeScriptsDir $s
+        if (Test-Path $scriptPath) {
+            Remove-Item -Force $scriptPath -ErrorAction SilentlyContinue
+            Write-Color Green "  Removed: $scriptPath"
+        }
+    }
+    if ((Test-Path $ClaudeScriptsDir) -and -not (Get-ChildItem $ClaudeScriptsDir -ErrorAction SilentlyContinue)) {
+        Remove-Item $ClaudeScriptsDir -Force -ErrorAction SilentlyContinue
+    }
+
+    # Shared Google credentials may be used by other installed skills.
+    # claude-blog does not own them, so uninstall must leave them intact.
+    Write-Color Yellow "  Shared Google credentials under ~/.config/claude-seo were left intact."
 
     Write-Host ""
     Write-Color Cyan "=== claude-blog uninstalled ==="

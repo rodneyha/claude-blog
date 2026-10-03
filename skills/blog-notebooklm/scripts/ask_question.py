@@ -11,6 +11,7 @@ See: https://github.com/microsoft/playwright/issues/36139
 
 import argparse
 import json
+import os
 import sys
 import time
 import re
@@ -24,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from auth_manager import AuthManager
 from notebook_manager import NotebookLibrary
-from config import QUERY_INPUT_SELECTORS, RESPONSE_SELECTORS
+from config import QUERY_INPUT_SELECTORS, RESPONSE_SELECTORS, validate_notebook_url
 from browser_utils import BrowserFactory, StealthUtils
 
 
@@ -54,7 +55,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
     auth = AuthManager()
 
     if not auth.is_authenticated():
-        print("⚠️ Not authenticated. Run: python auth_manager.py setup")
+        print("⚠️ Not authenticated. Run: python3 scripts/run.py auth_manager.py setup")
         return None
 
     print(f"💬 Asking: {question}")
@@ -84,6 +85,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         # Wait for query input (MCP approach)
         print("  ⏳ Waiting for query input...")
         query_element = None
+        matched_selector = None
 
         for selector in QUERY_INPUT_SELECTORS:
             try:
@@ -94,8 +96,9 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                 )
                 if query_element:
                     print(f"  ✓ Found input: {selector}")
+                    matched_selector = selector
                     break
-            except:
+            except Exception:
                 continue
 
         if not query_element:
@@ -105,8 +108,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         # Type question (human-like, fast)
         print("  ⏳ Typing question...")
         
-        # Use primary selector for typing
-        input_selector = QUERY_INPUT_SELECTORS[0]
+        input_selector = matched_selector or QUERY_INPUT_SELECTORS[0]
         StealthUtils.human_type(page, input_selector, question)
 
         # Submit
@@ -131,7 +133,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                 if thinking_element and thinking_element.is_visible():
                     time.sleep(1)
                     continue
-            except:
+            except Exception:
                 pass
 
             # Try to find response with MCP selectors
@@ -152,7 +154,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                             else:
                                 stable_count = 0
                                 last_text = text
-                except:
+                except Exception:
                     continue
 
             if answer:
@@ -169,9 +171,12 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         return answer + FOLLOW_UP_REMINDER
 
     except Exception as e:
-        print(f"  ❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+        # Closes audit VULN-021: don't dump full traceback (leaks local paths
+        # to caller / log). Gate verbose trace behind BLOG_DEBUG env.
+        print(f"  ❌ Error: {type(e).__name__}: {e}", file=sys.stderr)
+        if os.environ.get("BLOG_DEBUG"):
+            import traceback
+            traceback.print_exc()
         return None
 
     finally:
@@ -179,20 +184,33 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         if context:
             try:
                 context.close()
-            except:
+            except Exception:
                 pass
 
         if playwright:
             try:
                 playwright.stop()
-            except:
+            except Exception:
                 pass
 
 
 def main():
     parser = argparse.ArgumentParser(description='Ask NotebookLM a question')
 
-    parser.add_argument('--question', required=True, help='Question to ask')
+    def _bounded(max_len: int):
+        # Closes audit VULN-037: cap CLI string args. Multi-MB --question
+        # would be typed character-by-character into the NotebookLM textarea,
+        # blowing up browser memory and orchestrator log volume.
+        def _check(s: str) -> str:
+            if len(s) > max_len:
+                raise argparse.ArgumentTypeError(
+                    f"value too long ({len(s)} chars, max {max_len})"
+                )
+            return s
+        return _check
+
+    parser.add_argument('--question', required=True, type=_bounded(8000),
+                        help='Question to ask (max 8000 chars)')
     parser.add_argument('--notebook-url', help='NotebookLM notebook URL')
     parser.add_argument('--notebook-id', help='Notebook ID from library')
     parser.add_argument('--show-browser', action='store_true', help='Show browser')
@@ -228,11 +246,27 @@ def main():
                     mark = " [ACTIVE]" if nb.get('id') == library.active_notebook_id else ""
                     print(f"  {nb['id']}: {nb['name']}{mark}")
                 print("\nSpecify with --notebook-id or set active:")
-                print("python scripts/run.py notebook_manager.py activate --id ID")
+                print("python3 scripts/run.py notebook_manager.py activate --id ID")
             else:
                 print("❌ No notebooks in library. Add one first:")
-                print("python scripts/run.py notebook_manager.py add --url URL --name NAME --description DESC --topics TOPICS")
+                print("python3 scripts/run.py notebook_manager.py add --url URL --name NAME --description DESC --topics TOPICS")
             return 1
+
+    try:
+        notebook_url = validate_notebook_url(notebook_url)
+    except ValueError as e:
+        if args.json:
+            print(json.dumps({
+                "status": "error",
+                "error": str(e),
+                "question": args.question,
+                "notebook_id": args.notebook_id or "",
+                "notebook_url": notebook_url or "",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }, indent=2))
+        else:
+            print(f"❌ Invalid notebook URL: {e}", file=sys.stderr)
+        return 1
 
     # Ask the question
     answer = ask_notebooklm(

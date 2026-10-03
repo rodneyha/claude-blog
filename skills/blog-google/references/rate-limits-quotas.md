@@ -1,6 +1,6 @@
 # Blog Google - Rate Limits & Quotas
 
-## Consolidated Quota Table
+## Implemented API Quota Table
 
 | API | Per-Minute | Per-Day | Cost | Auth Type | Scope |
 |-----|-----------|---------|------|-----------|-------|
@@ -11,10 +11,10 @@
 | CrUX API | 150 QPM (shared) | Unlimited | Free | API Key | Per project |
 | CrUX History API | 150 QPM (shared with CrUX) | Unlimited | Free | API Key | Per project |
 | Indexing API | 380 RPM total, 180 read/min | 200 publish/day | Free | Service Account | Per project |
-| GA4 Data API | 10 concurrent | ~25K tokens/day | Free | Service Account | Per property/project |
-| Knowledge Graph | -- | 100,000 QPD | Free | API Key | Per project |
-| Custom Search | -- | 10,000 QPD max | 100 free, $5/1K | API Key | Per project |
-| Web Risk | 6,000 QPM | 100K/month | Free tier | API Key | Per project |
+| GA4 Data API | 10 concurrent (50 for 360) | 200,000 Core Tokens/day (std); 2M (360) | Free | Service Account | Per property/project |
+| YouTube Data API v3 |: | 10,000 units/day | Free | API Key | Per project |
+| Cloud Natural Language API |: | 5,000 units/month free tier | Paid after free tier | API Key | Per project |
+| Google Ads API | Account dependent | Account dependent | Free API access | OAuth + developer token | Per developer token and account |
 
 **Key distinction:** "Per site" quotas are scoped to a specific GSC property. "Per project" quotas are shared across all properties in a GCP project. "Per user" quotas are per authenticated user (service account).
 
@@ -55,9 +55,10 @@ GA4 uses a token system rather than simple request counts:
 - Simple 1-dimension, 1-metric report: ~1-5 tokens
 - Complex multi-dimension, multi-metric: ~10-100 tokens
 - Set `returnPropertyQuota: true` to monitor consumption
-- Daily limit: 25,000 tokens per property per project
-- Hourly limit: 5,000 tokens per property per project
-- Concurrent: max 10 simultaneous requests
+- Daily limit: **200,000 Core Tokens/day** per standard property (2,000,000 for 360)
+- Hourly limit: **40,000 tokens/hour** per property; **14,000/hour** per project per property
+- Concurrent: max 10 simultaneous requests (50 for 360)
+- Source: developers.google.com/analytics/devguides/reporting/data/v1/quotas (updated 2026-03-26)
 
 ## CrUX Shared Quota
 
@@ -65,11 +66,15 @@ The CrUX API and CrUX History API share the same 150 QPM quota per project. Plan
 
 ## Cost Summary
 
-**All APIs used by blog-google are free** at normal usage levels. No billing is required for:
+**Most APIs used by blog-google are free** at normal usage levels. No billing is required for:
 - PSI, CrUX, CrUX History (API key, unlimited free)
 - GSC (service account, 30M QPD)
 - Indexing API (service account, 200 publish/day)
-- GA4 Data API (service account, 25K tokens/day)
-- Knowledge Graph (API key, 100K QPD)
+- GA4 Data API (service account, 200K tokens/day standard)
+- YouTube Data API (API key, 10,000 units/day)
 
-Only Custom Search and Web Risk have paid tiers at high volumes.
+Cloud Natural Language requires billing enabled, with a free monthly tier. Google Ads API access is free, but Keyword Planner data quality depends on the Google Ads account.
+
+## Planned or Out-of-Scope APIs
+
+Knowledge Graph, Custom Search, and Web Risk are not implemented by scoped blog-google scripts. Do not count their quotas as available capabilities until a script and command surface exist.

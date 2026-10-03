@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agricidaniel-blog",
   "owner": {
     "name": "AgriciDaniel"
@@ -11,7 +10,7 @@
     {
       "name": "claude-blog",
       "source": "./",
-      "description": "AI-powered blog creation, optimization, and management with 22 skills, 4 agents, and 5-category scoring. Optimized for Google rankings and AI citations."
+      "description": "AI-powered blog creation, optimization, and management with 32 sub-skills, 5 agents, FLOW framework integration, semantic topic-cluster execution, multilingual publishing, brand and discourse context auto-load, and 5-category scoring. Optimized for Google rankings and AI citations."
     }
   ]
 }

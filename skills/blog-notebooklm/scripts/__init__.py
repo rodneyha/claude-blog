@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
 """
 NotebookLM Skill Scripts Package
-Provides automatic environment management for all scripts
+
+Provides venv management helpers. NOTE: closes audit VULN-031: this module
+no longer triggers `ensure_venv_and_run()` at import time. Callers must
+invoke it explicitly (typically via `setup_environment.py --bootstrap` or
+the `run.py` wrapper).
+
+Reason: import-time side effects ran venv.create + pip install + 150 MB
+Chrome download whenever any script in this package was imported (incl.
+test discovery, IDE auto-import). Triggering install on import violates
+the principle of least surprise and slows every cold start.
 """
 
 import os
@@ -12,8 +21,10 @@ from pathlib import Path
 
 def ensure_venv_and_run():
     """
-    Ensure virtual environment exists and run the requested script.
-    This is called when any script is imported or run directly.
+    Ensure virtual environment exists.
+
+    Call explicitly from a wrapper (e.g. `python -m setup_environment` or
+    `run.py`). Do NOT rely on this firing at import time.
     """
     # Only do this if we're not already in the skill's venv
     skill_dir = Path(__file__).parent.parent
@@ -42,7 +53,7 @@ def ensure_venv_and_run():
         venv.create(venv_dir, with_pip=True)
 
         # Install requirements
-        requirements_file = skill_dir / "requirements.txt"
+        requirements_file = skill_dir / "scripts" / "requirements.txt"
         if requirements_file.exists():
             if os.name == 'nt':  # Windows
                 pip_exe = venv_dir / "Scripts" / "pip.exe"
@@ -55,7 +66,7 @@ def ensure_venv_and_run():
                 check=True
             )
 
-            # Also install patchright's chromium
+            # Also install Patchright's Chrome channel
             print("   Setting up browser automation...")
             if os.name == 'nt':
                 python_exe = venv_dir / "Scripts" / "python.exe"
@@ -63,7 +74,7 @@ def ensure_venv_and_run():
                 python_exe = venv_dir / "bin" / "python"
 
             subprocess.run(
-                [str(python_exe), "-m", "patchright", "install", "chromium"],
+                [str(python_exe), "-m", "patchright", "install", "chrome"],
                 check=True,
                 capture_output=True
             )
@@ -77,5 +88,7 @@ def ensure_venv_and_run():
         print("   Or activate: source .venv/bin/activate")
 
 
-# Check environment when module is imported
-ensure_venv_and_run()
+# Audit VULN-031: removed import-time `ensure_venv_and_run()` call. Callers
+# must invoke `ensure_venv_and_run()` explicitly. The `setup_environment.py`
+# script and `run.py` wrapper both do this at top-level, so the user-facing
+# behavior of running `python run.py ...` is unchanged.

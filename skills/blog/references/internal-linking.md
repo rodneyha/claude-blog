@@ -1,12 +1,26 @@
 # Internal Link Architecture
 
+## Contents
+
+- [Why Internal Links Matter](#why-internal-links-matter)
+- [Link Density Targets](#link-density-targets)
+- [Anchor Text Distribution](#anchor-text-distribution)
+- [Link Placement Strategy](#link-placement-strategy)
+- [Bidirectional Linking](#bidirectional-linking)
+- [Hub-and-Spoke Model](#hub-and-spoke-model)
+- [Orphan Page Detection](#orphan-page-detection)
+- [Topic Cannibalization Detection](#topic-cannibalization-detection)
+- [Internal Link Audit Checklist](#internal-link-audit-checklist)
+- [Link Velocity Guidelines](#link-velocity-guidelines)
+- [Internal Link Tracking](#internal-link-tracking)
+
 ## Why Internal Links Matter
 
 Internal links are the primary mechanism for distributing page authority across
 a site. They tell search engines and AI systems which pages are important, how
 content relates, and what the site's topical structure looks like.
 
-John Mueller (Google): Internal linking is "supercritical for SEO" -- it helps
+John Mueller (Google): Internal linking is "supercritical for SEO": it helps
 Google understand site structure and page importance.
 
 seoClarity case study: 23% organic traffic increase from internal link
@@ -54,14 +68,14 @@ critical but overuse of exact-match anchors triggers spam signals.
 
 - **Descriptive**: The anchor text should tell the reader what they will find
   at the destination
-- **Natural**: Must read naturally in the sentence -- if removing the link
+- **Natural**: Must read naturally in the sentence: if removing the link
   leaves awkward phrasing, rewrite
-- **Varied**: Never use the same anchor text for the same destination across
-  multiple pages
+- **Varied**: Vary anchors naturally and avoid manipulative repetition; exact
+  repeats are acceptable when they are the clearest wording
 - **Relevant**: Anchor text must relate to the destination page's topic
 - **Reasonable length**: 2-6 words is ideal, never an entire sentence
 
-### Anchor Text Anti-Patterns -- NEVER Use
+### Anchor Text Anti-Patterns: NEVER Use
 
 | Pattern | Problem | Fix |
 |---------|---------|-----|
@@ -97,7 +111,7 @@ than links in footers or sidebars.
 
 1. Place the most important internal link in the first 2-3 paragraphs
 2. Link to the pillar page early in every supporting article
-3. Distribute links naturally throughout the body -- not clustered
+3. Distribute links naturally throughout the body: not clustered
 4. End sections with transitional links to related content
 5. Avoid placing all links in a "Related Articles" block at the bottom
 
@@ -166,7 +180,7 @@ linking architecture for topical authority.
 | Pillar → Spoke links | Pillar links to ALL supporting articles |
 | Spoke → Pillar links | Every supporting article links back to pillar |
 | Spoke ↔ Spoke links | Cross-link between related subtopics (where natural) |
-| Anchor text to pillar | Varied -- use different anchor text from each spoke |
+| Anchor text to pillar | Varied: use different anchor text from each spoke |
 
 ### Example Topic Cluster: "Technical SEO"
 
@@ -289,12 +303,13 @@ Run this audit quarterly or when publishing new content.
 
 ## Link Velocity Guidelines
 
-When adding internal links to existing content, do not bulk-update every page
-at once. This can trigger algorithmic review.
+When adding internal links to existing content, avoid bulk-updating every page
+at once unless you have QA coverage. Pace changes so crawl logs, broken links,
+and editorial relevance can be reviewed.
 
 | Action | Recommended Pace |
 |--------|-----------------|
-| New post with links | Normal -- add all links at publish time |
+| New post with links | Normal: add all links at publish time |
 | Updating existing posts | 3-5 posts per week maximum |
 | New pillar page launch | Update all spokes within 1-2 weeks |
 | Site-wide link audit fix | Spread changes over 2-4 weeks |
